@@ -10,17 +10,19 @@ import json
 import base64
 
 def generate_flag(team, service):
+	# Добавление флага в БД
 	return md5(str(getrandbits(128))).hexdigest()
 
 def get_old_flag(team, service):
+	# SQL( 'SELECT flag FROM flags WHERE team_id=%d AND service_id=%d ORDER BY post_time DESC LIMIT 1' )
 	return md5('yozik2').hexdigest()
 
 # Дополнительная информация для проверки флага
-def get_old_info(team, service):
+def get_old_info(flag):
+	# SQL( 'SELECT info FROM flags_info WHERE flag=%s LIMIT 1' )
 	return "administrator"
 
 def push_to_worker(channel_workers, team, service, flag, old_flag, old_info):
-	print "qwe"
 	payload = json.dumps({
 		'team' : team,
 		'service' : service,
@@ -44,7 +46,7 @@ def start_new_round(channel_workers):
 	for team in teams:
 		for service in services:
 			old_flag = get_old_flag(team, service)
-			old_info = get_old_info(team, service)
+			old_info = get_old_info(old_flag)
 			flag = generate_flag(team, service)
 			flags_list.append((team, service, flag, old_flag, old_info))
 
@@ -62,9 +64,9 @@ def checker_answer_callback():
 	pass
 
 
-def instance_work():
+def instance_work(self_name):
 	def callback(ch, method, properties, body):
-		print " [x] Received %r" % (body,)
+		print "%s : Received %r" % (self_name, body,)
 		ch.basic_ack(delivery_tag = method.delivery_tag)
 	
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -74,7 +76,7 @@ def instance_work():
 	channel.basic_consume(callback, queue='task_queue')
 	
 	if DEBUG:
-		print "start #", md5(str(getrandbits(8))).hexdigest()[:4]
+		print "start #", self_name
 
 	channel.start_consuming()
 
@@ -94,7 +96,7 @@ def init():
 	channel_workers.queue_declare(queue='task_queue', durable=True)
 
 	for queue in range(queue_len):
-		proc = Process(target=instance_work)
+		proc = Process(target=instance_work, args=(queue, ))
 		workers.append(proc)
 		proc.start()
 
