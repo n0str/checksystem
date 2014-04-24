@@ -9,7 +9,9 @@ import sys
 import json
 import base64
 import MySQLdb
+from subprocess import Popen, PIPE
 from time import sleep
+
 
 def generate_flag(team, service):
 	# Добавление флага в БД
@@ -138,4 +140,7 @@ db = MySQLdb.connect(host=db_settings["host"],
 cur = db.cursor() 
 
 
-init()
+#init()
+
+out, err = Popen('python checker.py', shell=True, stdout=PIPE).communicate()
+print out
