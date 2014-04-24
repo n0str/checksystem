@@ -8,20 +8,35 @@ import pika
 import sys
 import json
 import base64
+import MySQLdb
+from time import sleep
 
 def generate_flag(team, service):
 	# Добавление флага в БД
-	return md5(str(getrandbits(128))).hexdigest()
+	start = (
+		str(md5(str(getrandbits(128))).hexdigest()),
+		str(team[0]),
+		str(service[0]),
+	)
+	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','0000-00-00 00:00:00')", start)
+	cur.execute("INSERT INTO flags_info VALUES (%s,'')", (start[0],))
+	db.commit()
+	return start[0]
 
 def get_old_flag(team, service):
-	# SQL( 'SELECT flag FROM flags WHERE team_id=%d AND service_id=%d ORDER BY post_time DESC LIMIT 1' )
-	return md5('yozik2').hexdigest()
-
+	start = (
+		str(team[0]),
+		str(service[0]),
+	)
+	cur.execute("SELECT flag FROM flags WHERE team_id=%s AND service_id=%s ORDER BY post_timestamp DESC LIMIT 1",start)
+	return cur.fetchall()[0][0]
+	
 # Дополнительная информация для проверки флага
 def get_old_info(flag):
-	# SQL( 'SELECT info FROM flags_info WHERE flag=%s LIMIT 1' )
-	return "administrator"
-
+	start = (str(flag),)
+	cur.execute("SELECT info FROM flags_info WHERE flag = %s LIMIT 1",start)
+	return cur.fetchall()[0][0]
+	
 def push_to_worker(channel_workers, team, service, flag, old_flag, old_info):
 	payload = json.dumps({
 		'team' : team,
@@ -45,8 +60,12 @@ def start_new_round(channel_workers):
 
 	for team in teams:
 		for service in services:
-			old_flag = get_old_flag(team, service)
-			old_info = get_old_info(old_flag)
+			if current_round > 0:
+				old_flag = get_old_flag(team, service)
+				old_info = get_old_info(old_flag)
+			else:
+				old_flag = ""
+				old_info = ""
 			flag = generate_flag(team, service)
 			flags_list.append((team, service, flag, old_flag, old_info))
 
@@ -100,6 +119,7 @@ def init():
 		workers.append(proc)
 		proc.start()
 
+	sleep(3)
 	start_new_round(channel_workers)
 	channel_answer.start_consuming()
 
@@ -110,5 +130,12 @@ DEBUG = True
 answers_dict = {}
 workers = []
 current_round = 0
+
+db = MySQLdb.connect(host=db_settings["host"],
+		user=db_settings["user"],
+		passwd=db_settings["password"],
+		db=db_settings["db"])
+cur = db.cursor() 
+
 
 init()
