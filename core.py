@@ -11,7 +11,7 @@ import base64
 import MySQLdb
 import subprocess, threading
 from time import sleep
-from time import gmtime, strftime
+from time import gmtime, strftime, time
 
 # Принимает команду для запуска чекера. Возвращает stdout чекера.
 # @param: timeout - таймаут чекера
@@ -43,7 +43,7 @@ def generate_flag(team, service):
 		str(service[0]),
 	)
 	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','0','0')", start)
-	cur.execute("INSERT INTO flags_info VALUES (%s,'')", (start[0],))
+	cur.execute("INSERT INTO flags_info VALUES (%s,'none')", (start[0],))
 	db.commit()
 	return start[0]
 
@@ -64,13 +64,9 @@ def get_old_flag(team, service):
 def get_old_info(flag):
 	start = (str(flag),)
 	cur.execute("SELECT info FROM flags_info WHERE flag = %s LIMIT 1",start)
-
 	res = "none"
 	try:
-		if len(cur.fetchall()[0][0]) == 0:
-			res = "none"
-		else:
-			res = cur.fetchall()[0][0]
+		res = cur.fetchall()[0][0]
 	except:
 		res = "none"
 	return res
@@ -91,9 +87,10 @@ def push_to_worker(channel_workers, team, service, flag, old_flag, old_info):
 		)
 	)
 
-def start_new_round(channel_workers):
+def start_new_round():
 	global current_round
 	current_round += 1
+	answers_dict["time"] = time()
 
 	print "\033[1;32mCURRENT ROUND # %s at [%s]\033[0m" % (current_round,strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
@@ -105,12 +102,13 @@ def start_new_round(channel_workers):
 				old_flag = get_old_flag(team, service)
 				old_info = get_old_info(old_flag)
 			else:
-				old_flag = ""
-				old_info = ""
+				old_flag = "none"
+				old_info = "none"
 			flag = generate_flag(team, service)
 			flags_list.append((team, service, flag, old_flag, old_info))
 
 	shuffle(flags_list)
+
 	for elem in flags_list:
 		team, service, flag, old_flag, old_info = elem
 		push_to_worker(channel_workers, team, service, flag, old_flag, old_info)
@@ -122,19 +120,32 @@ def checker_answer_callback(ch, method, properties, body):
 		answers_dict[current_round] = 0
 	answers_dict[current_round] += 1
 
-	print "Received : %s" % body
+	payload = json.loads(body)
 
 
+	print "Received : %s" % payload[0]
+	print "Received : %s" % payload[1]
 
-
-
+	flag = payload[0]["flag"]
+	#team = payload[0]["team"][0]
+	#service = payload[0]["service"][0]
+	info = payload[1]["info"]
+	error = payload[1]["error"]
+	get_result = payload[1]["get"]
+	put_result = payload[1]["put"]
+	start1 = (get_result, put_result, flag)
+	cur.execute("UPDATE flags SET check_status=%s,put_status=%s WHERE flag=%s", start1)
+	start2 = (info, flag)
+	cur.execute("UPDATE flags_info SET info=%s WHERE flag=%s", start2)
+	db.commit()
 
 	if ans_count == answers_dict[current_round]:
-		print "START NEW ROUND # %d" % (current_round+1)
+		dlt = time() - answers_dict["time"]
+		if dlt < ROUND_DURATION:
+			sleep(ROUND_DURATION - dlt)
+		start_new_round()
 		# проверка соединения	
 
-		
-	# обработать ответы, положить в базу
 	# если подолшло время финиша игры, то exit
 
 
@@ -144,7 +155,7 @@ def instance_work(self_name):
 		string = "python checker.py %s %s %s %s" % (payload["team"][2], payload["flag"], payload["old_info"], payload["old_flag"])
 
 		command = Command(string)
-		out = command.run(timeout=30)
+		out = command.run(timeout=CHECKER_TIMEOUT)
 		#out, err = subprocess.Popen(string, shell=True, stdout=subprocess.PIPE).communicate()	
 		#print "%s : Received %r %s" % (self_name, body,out)
 
@@ -175,17 +186,13 @@ def init():
 	channel_answer.queue_declare(queue='answers')
 	channel_answer.basic_consume(checker_answer_callback, queue='answers', no_ack=True)
 
-	connection_workers = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-	channel_workers = connection_workers.channel()
-	channel_workers.queue_declare(queue='task_queue', durable=True)
-
 	for queue in range(queue_len):
 		proc = Process(target=instance_work, args=(queue, ))
 		workers.append(proc)
 		proc.start()
 
 	sleep(3)
-	start_new_round(channel_workers)
+	start_new_round()
 	channel_answer.start_consuming()
 
 	connection_workers.close()
@@ -203,6 +210,10 @@ db = MySQLdb.connect(host=db_settings["host"],
 		db=db_settings["db"])
 cur = db.cursor() 
 
+
+connection_workers = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+channel_workers = connection_workers.channel()
+channel_workers.queue_declare(queue='task_queue', durable=True)
 
 init()
 

@@ -15,7 +15,7 @@ status = {
 	"error" : [],
 	"get" : 1,
 	"put" : 1,
-	"info" : "",
+	"info" : "none",
 }
 
 def put_flag(ip, flag):
@@ -58,7 +58,8 @@ def check_flag(ip, flag, info):
 if not len(sys.argv) == 5:
 	print json.dumps(
 		{
-			"error" : [1,]
+			"error" : [1,],
+			"dop_error" : sys.argv
 		}
 	)
 	sys.exit()
