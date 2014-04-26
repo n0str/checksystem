@@ -23,6 +23,6 @@ queue_len = 3
 checker_work_timeout = 15 * 1000
 
 
-ROUND_DURATION = 10
+ROUND_DURATION = 30
 FLAG_DURATION = ROUND_DURATION * 5
 CHECKER_TIMEOUT = 5

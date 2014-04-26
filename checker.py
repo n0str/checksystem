@@ -54,12 +54,10 @@ def check_flag(ip, flag, info):
 		status["error"].append(2)
 		return False
 
-
 if not len(sys.argv) == 5:
 	print json.dumps(
 		{
 			"error" : [1,],
-			"dop_error" : sys.argv
 		}
 	)
 	sys.exit()
