@@ -9,18 +9,40 @@ import sys
 import json
 import base64
 import MySQLdb
-from subprocess import Popen, PIPE
+import subprocess, threading
 from time import sleep
+from time import gmtime, strftime
 
+# Принимает команду для запуска чекера. Возвращает stdout чекера.
+# @param: timeout - таймаут чекера
+class Command(object):
+	def __init__(self, cmd):
+		self.cmd = cmd
+		self.process = None
+		self.out = None
+
+	def run(self, timeout):
+		def target():
+			self.process = subprocess.Popen(self.cmd, shell=True, stdout=subprocess.PIPE)
+			self.out, err = self.process.communicate()
+
+		thread = threading.Thread(target=target)
+		thread.start()
+
+		thread.join(timeout)
+		if thread.is_alive():
+			print 'Terminating process by timeout'
+			self.out = "timeout"
+			self.process.terminate()
+		return self.out
 
 def generate_flag(team, service):
-	# Добавление флага в БД
 	start = (
 		str(md5(str(getrandbits(128))).hexdigest()),
 		str(team[0]),
 		str(service[0]),
 	)
-	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','0000-00-00 00:00:00')", start)
+	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','0','0')", start)
 	cur.execute("INSERT INTO flags_info VALUES (%s,'')", (start[0],))
 	db.commit()
 	return start[0]
@@ -31,13 +53,27 @@ def get_old_flag(team, service):
 		str(service[0]),
 	)
 	cur.execute("SELECT flag FROM flags WHERE team_id=%s AND service_id=%s ORDER BY post_timestamp DESC LIMIT 1",start)
-	return cur.fetchall()[0][0]
+	res = "none"
+	try:
+		res = cur.fetchall()[0][0]
+	except:
+		res = "none"
+	return res
 	
 # Дополнительная информация для проверки флага
 def get_old_info(flag):
 	start = (str(flag),)
 	cur.execute("SELECT info FROM flags_info WHERE flag = %s LIMIT 1",start)
-	return cur.fetchall()[0][0]
+
+	res = "none"
+	try:
+		if len(cur.fetchall()[0][0]) == 0:
+			res = "none"
+		else:
+			res = cur.fetchall()[0][0]
+	except:
+		res = "none"
+	return res
 	
 def push_to_worker(channel_workers, team, service, flag, old_flag, old_info):
 	payload = json.dumps({
@@ -58,6 +94,9 @@ def push_to_worker(channel_workers, team, service, flag, old_flag, old_info):
 def start_new_round(channel_workers):
 	global current_round
 	current_round += 1
+
+	print "\033[1;32mCURRENT ROUND # %s at [%s]\033[0m" % (current_round,strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
 	flags_list = []
 
 	for team in teams:
@@ -77,17 +116,46 @@ def start_new_round(channel_workers):
 		push_to_worker(channel_workers, team, service, flag, old_flag, old_info)
 
 
-def checker_answer_callback():
-	# проверить, что все ответы за раунд пришли
+def checker_answer_callback(ch, method, properties, body):
+	ans_count = len(teams) * len(services)
+	if not current_round in answers_dict:
+		answers_dict[current_round] = 0
+	answers_dict[current_round] += 1
+
+	print "Received : %s" % body
+
+
+
+
+
+
+	if ans_count == answers_dict[current_round]:
+		print "START NEW ROUND # %d" % (current_round+1)
+		# проверка соединения	
+
+		
 	# обработать ответы, положить в базу
-	# посчитать кол-во ответов за раунд, если все, то новый раунд
 	# если подолшло время финиша игры, то exit
-	pass
 
 
 def instance_work(self_name):
 	def callback(ch, method, properties, body):
-		print "%s : Received %r" % (self_name, body,)
+		payload = json.loads(body)
+		string = "python checker.py %s %s %s %s" % (payload["team"][2], payload["flag"], payload["old_info"], payload["old_flag"])
+
+		command = Command(string)
+		out = command.run(timeout=30)
+		#out, err = subprocess.Popen(string, shell=True, stdout=subprocess.PIPE).communicate()	
+		#print "%s : Received %r %s" % (self_name, body,out)
+
+		out_payload = json.loads(out)
+
+		sendtext = json.dumps([payload,out_payload])
+
+		channel.basic_publish(exchange='',
+                      routing_key='answers',
+                      body=sendtext)
+
 		ch.basic_ack(delivery_tag = method.delivery_tag)
 	
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -100,11 +168,6 @@ def instance_work(self_name):
 		print "start #", self_name
 
 	channel.start_consuming()
-
-	# получит из очереди команду, сервис, флаг, старый флаг
-	# вызовет 2 чекера по очереди
-	# результаты работы чекеров -- в очередь answers
-
 
 def init():
 	connection_answer = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -133,6 +196,7 @@ answers_dict = {}
 workers = []
 current_round = 0
 
+
 db = MySQLdb.connect(host=db_settings["host"],
 		user=db_settings["user"],
 		passwd=db_settings["password"],
@@ -140,7 +204,6 @@ db = MySQLdb.connect(host=db_settings["host"],
 cur = db.cursor() 
 
 
-#init()
+init()
 
-out, err = Popen('python checker.py', shell=True, stdout=PIPE).communicate()
-print out
+

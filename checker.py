@@ -4,6 +4,7 @@ import os
 import random
 import string
 import sys
+import time
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 	return ''.join(random.choice(chars) for _ in range(size))
@@ -19,7 +20,7 @@ status = {
 
 def put_flag(ip, flag):
 	user = id_generator()
-	h = httplib2.Http()
+	h = httplib2.Http(timeout=3)
 	string_reg = "http://" + ip + "/1.php?registration=1&user=" + user
 	string_put = "http://" + ip + "/1.php?put=1&user=" + user + "&flag=" + flag
 	try:
@@ -39,7 +40,7 @@ def put_flag(ip, flag):
 		return False
 
 def check_flag(ip, flag, info):
-	h = httplib2.Http()
+	h = httplib2.Http(timeout=3)
 	string = "http://" + ip + "/1.php?get=1&user=" + info
 	try:
 		header, content = h.request(string)
