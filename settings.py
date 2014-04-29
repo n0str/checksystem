@@ -1,13 +1,13 @@
 
 teams = [
-    (0, 'Yozik', '127.0.0.1'),
-    (1, 'keva', '10.53.255.3')
+    (1, 'one half of yozik', '192.168.0.100'),
+    (2, 'another half of yozik', '192.168.0.101'),
 ]
 
 services = [
-	(0, 'php', 80),
-	(1, 'perl', 40),
-	(2, 'python', 9001)
+	(1, 'php', 80),
+	(2, 'perl', 40),
+	(3, 'python', 9001)
 ]
 
 db_settings = {
@@ -20,11 +20,8 @@ db_settings = {
 queues_names = ['q1', 'q2', 'q3']
 queue_len = 3
 
-checker_work_timeout = 15 * 1000
-
-
-ROUND_DURATION = 30
+ROUND_DURATION = 60
 FLAG_DURATION = ROUND_DURATION * 5
 CHECKER_TIMEOUT = 15
 
-GAME_FINISH_TIME = 10
+GAME_FINISH_TIME = 1398755548 #timestamp
