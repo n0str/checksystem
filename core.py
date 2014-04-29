@@ -43,7 +43,7 @@ def generate_flag(team, service):
 		str(team[0]),
 		str(service[0]),
 	)
-	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','0','0')", start)
+	cur.execute("INSERT INTO flags VALUES (NULL,%s,%s,%s,NULL,'0000-00-00 00:00:00','-10','-10')", start)
 	cur.execute("INSERT INTO flags_info VALUES (%s,'none')", (start[0],))
 	db.commit()
 	return start[0]
@@ -113,7 +113,6 @@ def start_new_round():
 	for elem in flags_list:
 		team, service, flag, old_flag, old_info = elem
 		push_to_worker(channel_workers, team, service, flag, old_flag, old_info)
-
 
 def checker_answer_callback(ch, method, properties, body):
 	ans_count = len(teams) * len(services)
