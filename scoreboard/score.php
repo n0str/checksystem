@@ -2,8 +2,8 @@
 #error_reporting(E_ALL);
 #ini_set('display_errors', 'On');
 
-$ROUND_DURATION = 30;
-$FLAG_DURATION = 30 * 5;
+$ROUND_DURATION = 60;
+$FLAG_DURATION = 60 * 5;
 $TEAMS = array();
 $SERVICES = array();
 $A = 6;
@@ -71,7 +71,7 @@ function get_attack_defence()
             "defence" => $teams_defence[$team_id[0]], 
             "attack" =>$teams_attack[$team_id[0]],
             "advisory" => $teams_advisory[$team_id[0]],
-            "score" => $teams_attack[$team_id[0]] + $teams_defence[$team_id[0]]
+            "score" => $teams_attack[$team_id[0]] + $teams_defence[$team_id[0]] + $teams_advisory[$team_id[0]]
             );
 
         foreach ($SERVICES as $serv) {

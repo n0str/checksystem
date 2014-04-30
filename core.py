@@ -162,7 +162,7 @@ def instance_work(self_name):
 		payload = json.loads(body)
 
 		string = "python %s %s %s %s %s" % (payload["service"][2], payload["team"][2], payload["flag"], payload["old_info"], payload["old_flag"])
-		print string
+		#print string
 		command = Command(string)
 		out = command.run(timeout=CHECKER_TIMEOUT)
 		#out, err = subprocess.Popen(string, shell=True, stdout=subprocess.PIPE).communicate()	
