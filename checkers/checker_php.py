@@ -69,7 +69,7 @@ def put_flag(ip, flag):
 		response, content = h.request(string_put, 'POST', post_param, headers=headers)
 
 		a = re.compile('\:\:\:(\w+)')
-		return a.findall(content) #return shield
+		return a.findall(content)[0] #return shield
 
 	except:
 		status["get"] = "0"

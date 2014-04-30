@@ -1,13 +1,12 @@
 
 teams = [
-    (1, 'one half of yozik', '192.168.0.100'),
-    (2, 'another half of yozik', '192.168.0.101'),
+    (1, 'one half of the yozik', '192.168.0.62'),
+    (2, 'another half of the yozik', '192.168.0.71'),
 ]
 
 services = [
-	(1, 'php', 80),
-	(2, 'perl', 40),
-	(3, 'python', 9001)
+	(1, 'php', './checkers/checker_php.py'),
+	#(2, 'python', 'checkers/checker.py'),
 ]
 
 db_settings = {
@@ -18,7 +17,7 @@ db_settings = {
 }
 
 queues_names = ['q1', 'q2', 'q3']
-queue_len = 3
+queue_len = 2
 
 ROUND_DURATION = 60
 FLAG_DURATION = ROUND_DURATION * 5

@@ -1,10 +1,11 @@
 <?php
 function restart($pdo)
 {
-	global $T_users,$T_transactions;
+	global $T_users,$T_transactions,$T_frozen;
 	$pdo->query('TRUNCATE TABLE '.$T_users);
 	$pdo->query('TRUNCATE TABLE '.$T_transactions);
-	$pdo->query('INSERT INTO '.$T_users.' (login,password,cash) VALUES ("admin","Pa$$w0rD",10000)');
+	$pdo->query('TRUNCATE TABLE '.$T_frozen);
+	$pdo->query('INSERT INTO '.$T_users.' (id,login,password,cash) VALUES (10000,"admin","Pa$$w0rD",10000)');
 	session_destroy();
 }
 

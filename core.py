@@ -160,8 +160,9 @@ def checker_answer_callback(ch, method, properties, body):
 def instance_work(self_name):
 	def callback(ch, method, properties, body):
 		payload = json.loads(body)
-		string = "python checker.py %s %s %s %s" % (payload["team"][2], payload["flag"], payload["old_info"], payload["old_flag"])
 
+		string = "python %s %s %s %s %s" % (payload["service"][2], payload["team"][2], payload["flag"], payload["old_info"], payload["old_flag"])
+		print string
 		command = Command(string)
 		out = command.run(timeout=CHECKER_TIMEOUT)
 		#out, err = subprocess.Popen(string, shell=True, stdout=subprocess.PIPE).communicate()	
