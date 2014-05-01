@@ -6,7 +6,7 @@ use AnyEvent;
 use AnyEvent::Util;
 use IO::Socket::INET;
 use MIME::Base64;
-use Term::ANSIColor;
+use Term::ANSIColor qw(:constants);
 
 $AnyEvent::Util::MAX_FORKS = 31;
 
@@ -35,9 +35,9 @@ my $handle_client = AnyEvent->io(
 sub welcome_msg($) {
     my $client = shift;
 
-    print $client "Welcome to the 'Notes collection' service!\n",
-                  "Possible actions now are : auth, reg\n",
-                  "\$ ";
+    print $client BRIGHT_BLUE."Welcome to the 'Notes collection' service!\n",
+                              "Possible actions now are : auth, reg, help\n",
+                        RESET."\$ ";
 }
 
 sub parse_user_credentials($) {
@@ -57,7 +57,7 @@ sub parse_user_credentials($) {
 sub get_user_info($) {
     my $client = shift;
 
-    print $client "--> Now send me your token\n# ";
+    print $client BRIGHT_BLUE."--> Now send me your token\n".RESET."# ";
     my $user_token = <$client>;
     
     if (not defined $user_token) {
@@ -95,7 +95,7 @@ sub check_user_id($) {
 sub get_user_name($) {
     my $client = shift;
 
-    print $client "--> Enter your name (4 or more chars)\n# ";
+    print $client BRIGHT_BLUE."--> Enter your name (4 or more chars)\n".RESET."# ";
     my $user_name = <$client>;
 
     return undef if not defined $user_name;
@@ -129,12 +129,12 @@ sub create_new_user($) {
     my $user_name = get_user_name($client);
 
     if (not defined $user_name) {
-        print $client "--> Wrong user name\n";
+        print $client RED."--> Wrong user name\n".RESET;
         return (undef, undef, undef);
     }
 
     if (exists $global_user_db{$user_name}) {
-        print $client "--> User already exist\n";
+        print $client RED."--> User already exist\n".RESET;
         return (undef, undef, undef);
     }
 
@@ -151,11 +151,11 @@ sub handle_unauth_cmd($$$) {
         my $user_name = check_user_id($client);
 
         if (not defined $user_name) {
-            print $client "--> Wrong token\n\$ ";
+            print $client RED."--> Wrong token\n".RESET."\$ ";
             return undef;
         }
 
-        print $client "Hello $user_name\n$user_name \$ ";
+        print $client BRIGHT_BLUE."Hello $user_name\n".RESET."$user_name \$ ";
 
         $$state{auth} = 1;
         $$state{name} = $user_name;
@@ -167,7 +167,7 @@ sub handle_unauth_cmd($$$) {
         my ($user_id, $user_name, $user_token) = create_new_user($client);
 
         if (not defined $user_name or not defined $user_id or not defined $user_token) {
-            print $client "--> New account was not created\n\$ ";
+            print $client RED."--> New account was not created\n".RESET."\$ ";
             return undef;
         }
 
@@ -175,12 +175,113 @@ sub handle_unauth_cmd($$$) {
         $$state{name}     = $user_name;
         $$state{token_id} = $user_id;
 
-        print $client "--> Your token is ".encode_base64($user_token).$user_name." \$ ";
+        print $client BRIGHT_BLUE."--> Your token is ".encode_base64($user_token).RESET.$user_name." \$ ";
 
         return $user_name;
     }
 
-    print $client "Unknown command\n\$ ";
+    if ($cmd =~ /^h[elp]*$/) {
+        print $client BRIGHT_BLUE."Currently you are not authenticated thus\n",
+                                  "you've access only to the following options :\n",
+                                  "=> auth - authenticate yourself\n",
+                                  "=> reg  - create new user\n",
+                                  "=> help - show this message\n",
+                            RESET."\$ ";
+        return undef;
+    }
+
+    print $client RED."Unknown command\n".RESET."\$ ";
+}
+
+sub get_file_content($) {
+    my $file_name = shift;
+
+    local $/ = undef;
+    open my $fh, "$file_name" or return undef;
+    my $file_content = <$fh>;
+    close $fh;
+
+    if (not defined $file_content) {
+        return undef;
+    }
+
+    if (length $file_content == 0) {
+        return undef;
+    }
+
+    $file_content;
+}
+
+sub get_user_note($) {
+    my $client = shift;
+
+    print $client BRIGHT_BLUE, "Enter your note :\n".RESET."# ";
+    my $user_note = <$client>;
+
+    if (not defined $user_note) {
+        return undef;
+    }
+
+    chomp $user_note;
+    $user_note =~ s/[^\w ?!'".,-_]//g;
+
+    if (length $user_note == 0) {
+        return undef;
+    }
+
+    $user_note;
+}
+
+sub write_note_into_file($$) {
+    my ($file_name, $note) = @_;
+
+    open my $fh, ">> $file_name" or return undef;
+    print $fh $note."\n";
+    close $fh;
+}
+
+sub handle_auth_cmd($$$) {
+    my ($client, $cmd, $state) = @_;
+
+    if ($cmd =~ /^read$/) {
+        my $file_content = get_file_content($$state{name});
+
+        if (not defined $file_content) {
+            print $client BRIGHT_BLUE."You don't have any notes\n".RESET."$$state{name} \$ ";
+            return undef;
+        }
+
+        print $client BRIGHT_BLUE."Your notes :\n".$file_content.RESET."$$state{name} \$ ";
+
+        return undef;
+    }
+
+    if ($cmd =~ /^add$/) {
+        my $note = get_user_note($client);
+
+        if (not defined $note) {
+            print $client RED."Something is wrong with your note\n".RESET."$$state{name} \$ ";
+            return undef;
+        }
+
+        write_note_into_file($$state{name}, $note);
+
+        print $client BRIGHT_BLUE."Your note : '".join "", ($note =~ /^(.{1,8}).*$/),
+                                  length $note > 8 ? "..." : "", "' has been saved\n",
+                            RESET."$$state{name} \$ ";
+
+        return undef;
+    }
+
+    if ($cmd =~ /^h[elp]*$/) {
+        print $client BRIGHT_BLUE."Hey, $$state{name}! here is your help message :\n",
+                                  "=> read - read all my notes\n",
+                                  "=> add  - add yet another note\n",
+                            RESET."$$state{name} \$ ";
+        return undef;
+    }
+
+    print $client RED."Unknown command\n".RESET."$$state{name} \$ ";
 }
 
 sub handle_connections($) {
@@ -199,7 +300,10 @@ sub handle_connections($) {
             next;
         }
 
-        print $client "Unknown command\n$user_credentials{name} \$ ";
+        if ($user_credentials{'auth'} == 1) {
+            handle_auth_cmd($client, $client_response, \%user_credentials);
+            next;
+        }
     }
 
     $cv->end();
