@@ -155,7 +155,7 @@ sub handle_unauth_cmd($$$) {
             return undef;
         }
 
-        print $client BRIGHT_BLUE."Hello $user_name\n".RESET."$user_name ";
+        print $client BRIGHT_BLUE."Hello $user_name\n".RESET;
 
         $$state{auth} = 1;
         $$state{name} = $user_name;
