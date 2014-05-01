@@ -13,6 +13,15 @@ import subprocess, threading
 from time import sleep
 from time import localtime, strftime, time
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    COOL = '\033[1;32m'
+
 # Принимает команду для запуска чекера. Возвращает stdout чекера.
 # @param: timeout - таймаут чекера
 class Command(object):
@@ -93,7 +102,7 @@ def start_new_round():
 	current_round += 1
 	answers_dict["time"] = time()
 
-	print "\033[1;32mCURRENT ROUND # %s at [%s]\033[0m" % (current_round,strftime("%Y-%m-%d %H:%M:%S", localtime()))
+	print  "%sCURRENT ROUND # %s at [%s]%s" % (bcolors.COOL, current_round,strftime("%Y-%m-%d %H:%M:%S", localtime()), bcolors.ENDC)
 
 	flags_list = []
 
@@ -127,25 +136,28 @@ def checker_answer_callback(ch, method, properties, body):
 		payload[0]["old_flag"], payload[0]["flag"], payload[0]["old_info"], payload[0]["team"], payload[0]["service"], 
 	)
 
-	try:
-		flag = payload[0]["flag"]
-		#team = payload[0]["team"][0]
-		#service = payload[0]["service"][0]
-		info = payload[1]["info"]
-		error = payload[1]["error"]
-		get_result = payload[1]["get"]
-		put_result = payload[1]["put"]
-		start1 = (get_result, put_result, flag)
-		cur.execute("UPDATE flags SET check_status=%s,put_status=%s WHERE flag=%s", start1)
-		start2 = (info, flag)
-		cur.execute("UPDATE flags_info SET info=%s WHERE flag=%s", start2)
-		db.commit()
+	if "checker_error" in payload[1]["error"]:
+		print bcolors.FAIL + "\t\tERROR (checker timeout)" + bcolors.ENDC
+	else:
+		try:
+			flag = payload[0]["flag"]
+			#team = payload[0]["team"][0]
+			#service = payload[0]["service"][0]
+			info = payload[1]["info"]
+			error = payload[1]["error"]
+			get_result = payload[1]["get"]
+			put_result = payload[1]["put"]
+			start1 = (get_result, put_result, flag)
+			cur.execute("UPDATE flags SET check_status=%s,put_status=%s WHERE flag=%s", start1)
+			start2 = (info, flag)
+			cur.execute("UPDATE flags_info SET info=%s WHERE flag=%s", start2)
+			db.commit()
 
-		print "\t\tput_result=%s\n\t\tget_result=%s\n\t\tinfo=%s\n\t\terror=%s" % (
-			put_result,get_result,info,error,
-		)
-	except:
-		print "ERROR (checker_answer_callback)"
+			print "\t\tput_result=%s\n\t\tget_result=%s\n\t\tinfo=%s\n\t\terror=%s" % (
+				put_result,get_result,info,error,
+			)
+		except:
+			print "ERROR (checker_answer_callback)"
 
 	if ans_count == answers_dict[current_round]:
 		dlt = time() - answers_dict["time"]
@@ -173,7 +185,7 @@ def instance_work(self_name):
 			out_payload = json.loads(out)
 		except:
 			print >> sys.stderr, 'error (instance_work,callback) at %s\n%s' % (str(time()),out) 
-			out_payload = {"error" : [1,],}
+			out_payload = {"error" : ["checker_error",],}
 
 		sendtext = json.dumps([payload,out_payload])
 

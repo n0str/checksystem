@@ -11,10 +11,11 @@ use Term::ANSIColor qw(:constants);
 $AnyEvent::Util::MAX_FORKS = 31;
 
 my %global_user_db = ();
+my $localip   = $ARGV[0];
 
 my $server = IO::Socket::INET->new(
         'Proto'     => 'tcp',
-        'LocalAddr' => 'localhost',
+        'LocalAddr' => $localip,
         'LocalPort' => 0x4014,
         'Listen'    => 3,
         'ReuseAddr' => 1

@@ -1,11 +1,11 @@
 
 teams = [
-    (1, 'one half of the yozik', '192.168.0.62'),
+    (1, 'one half of the yozik', '127.0.0.1'),
     (2, 'another half of the yozik', '192.168.0.71'),
 ]
 
 services = [
-	(1, 'php', './checkers/checker_php.py'),
+	(1, 'perl', './checkers/checker_perl.py'),
 	#(2, 'python', 'checkers/checker.py'),
 ]
 
