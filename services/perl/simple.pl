@@ -95,7 +95,7 @@ sub check_user_id($) {
 sub get_user_name($) {
     my $client = shift;
 
-    print $client BRIGHT_BLUE."--> Enter your name (4 or more chars)\n".RESET."# ";
+    print $client BRIGHT_BLUE."--> Enter your name (5 or more chars)\n".RESET."# ";
     my $user_name = <$client>;
 
     return undef if not defined $user_name;
@@ -151,11 +151,11 @@ sub handle_unauth_cmd($$$) {
         my $user_name = check_user_id($client);
 
         if (not defined $user_name) {
-            print $client RED."--> Wrong token\n".RESET."\$ ";
+            print $client RED."--> Wrong token\n".RESET;
             return undef;
         }
 
-        print $client BRIGHT_BLUE."Hello $user_name\n".RESET."$user_name \$ ";
+        print $client BRIGHT_BLUE."Hello $user_name\n".RESET."$user_name ";
 
         $$state{auth} = 1;
         $$state{name} = $user_name;
@@ -167,7 +167,7 @@ sub handle_unauth_cmd($$$) {
         my ($user_id, $user_name, $user_token) = create_new_user($client);
 
         if (not defined $user_name or not defined $user_id or not defined $user_token) {
-            print $client RED."--> New account was not created\n".RESET."\$ ";
+            print $client RED."--> New account was not created\n".RESET;
             return undef;
         }
 
@@ -175,7 +175,7 @@ sub handle_unauth_cmd($$$) {
         $$state{name}     = $user_name;
         $$state{token_id} = $user_id;
 
-        print $client BRIGHT_BLUE."--> Your token is ".encode_base64($user_token).RESET.$user_name." \$ ";
+        print $client BRIGHT_BLUE."--> Your token is ".encode_base64($user_token).RESET;
 
         return $user_name;
     }
@@ -185,12 +185,11 @@ sub handle_unauth_cmd($$$) {
                                   "you've access only to the following options :\n",
                                   "=> auth - authenticate yourself\n",
                                   "=> reg  - create new user\n",
-                                  "=> help - show this message\n",
-                            RESET."\$ ";
+                                  "=> help - show this message\n".RESET;
         return undef;
     }
 
-    print $client RED."Unknown command\n".RESET."\$ ";
+    print $client RED."Unknown command\n".RESET;
 }
 
 sub get_file_content($) {
@@ -247,11 +246,11 @@ sub handle_auth_cmd($$$) {
         my $file_content = get_file_content($$state{name});
 
         if (not defined $file_content) {
-            print $client BRIGHT_BLUE."You don't have any notes\n".RESET."$$state{name} \$ ";
+            print $client BRIGHT_BLUE."You don't have any notes\n".RESET;
             return undef;
         }
 
-        print $client BRIGHT_BLUE."Your notes :\n".$file_content.RESET."$$state{name} \$ ";
+        print $client BRIGHT_BLUE."Your notes :\n".$file_content.RESET;
 
         return undef;
     }
@@ -260,15 +259,14 @@ sub handle_auth_cmd($$$) {
         my $note = get_user_note($client);
 
         if (not defined $note) {
-            print $client RED."Something is wrong with your note\n".RESET."$$state{name} \$ ";
+            print $client RED."Something is wrong with your note\n".RESET;
             return undef;
         }
 
         write_note_into_file($$state{name}, $note);
 
         print $client BRIGHT_BLUE."Your note : '".join "", ($note =~ /^(.{1,8}).*$/),
-                                  length $note > 8 ? "..." : "", "' has been saved\n",
-                            RESET."$$state{name} \$ ";
+                                  length $note > 8 ? "..." : "", "' has been saved\n".RESET;
 
         return undef;
     }
@@ -276,12 +274,11 @@ sub handle_auth_cmd($$$) {
     if ($cmd =~ /^h[elp]*$/) {
         print $client BRIGHT_BLUE."Hey, $$state{name}! here is your help message :\n",
                                   "=> read - read all my notes\n",
-                                  "=> add  - add yet another note\n",
-                            RESET."$$state{name} \$ ";
+                                  "=> add  - add yet another note\n".RESET;
         return undef;
     }
 
-    print $client RED."Unknown command\n".RESET."$$state{name} \$ ";
+    print $client RED."Unknown command\n".RESET;
 }
 
 sub handle_connections($) {
@@ -294,6 +291,7 @@ sub handle_connections($) {
     my %user_credentials = (auth => 0, name => undef, token_id => undef);
 
     while (my $client_response = <$client>) {
+        next if $client_response eq "\n";
 
         if ($user_credentials{'auth'} == 0) {
             handle_unauth_cmd($client, $client_response, \%user_credentials);
@@ -304,6 +302,8 @@ sub handle_connections($) {
             handle_auth_cmd($client, $client_response, \%user_credentials);
             next;
         }
+    } continue {
+        print $client $user_credentials{auth} == 1 ? $user_credentials{name}." " : "","\$ ";
     }
 
     $cv->end();
