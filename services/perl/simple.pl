@@ -273,8 +273,17 @@ sub handle_auth_cmd($$$) {
 
     if ($cmd =~ /^h[elp]*$/) {
         print $client BRIGHT_BLUE."Hey, $$state{name}! here is your help message :\n",
-                                  "=> read - read all my notes\n",
-                                  "=> add  - add yet another note\n".RESET;
+                                  "=> read  - read all my notes\n",
+                                  "=> users - get userlist\n",
+                                  "=> help  - show this message\n",
+                                  "=> add   - add yet another note\n".RESET;
+        return undef;
+    }
+
+    if ($cmd =~ /^users$/) {
+        print $client BRIGHT_BLUE, scalar(keys %global_user_db) > 0 
+                                 ? "Registered users : \n".join "\n", (keys %global_user_db)
+                                 : "No one is registered", "\n".RESET;
         return undef;
     }
 
