@@ -116,7 +116,11 @@ def check_flag(ip, flag, info):
     try:
         url = 'http://' + ip + ':' + SERVICE_PORT + '/user/' + username + '?friend_token=' + token
         response, content = h.request(url, headers=headers)
-        return flag in content
+        result = flag in content
+        if not result:
+            status["error"].append(3)
+
+        return result
     except:
         status["error"].append(4)
         return False
