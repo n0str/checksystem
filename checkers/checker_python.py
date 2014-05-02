@@ -7,6 +7,7 @@ import sys
 import socks
 import mimetypes
 import re
+import base64
 from urllib import urlencode
 
 
@@ -95,7 +96,9 @@ def put_flag(ip, flag):
         fields = [
             ('title', flag),
             ('is_private', '1')]
+
         files = [('image', FLAG_FILE_NAME, open(FLAG_FILE_NAME, 'rb').read())]
+
         content_type, body = encode_multipart_formdata(fields, files)
         headers['Content-Type'] = content_type
         response, content = h.request(put_flag_url, "POST", body, headers=headers)
@@ -111,9 +114,9 @@ def put_flag(ip, flag):
 
 def check_flag(ip, flag, info):
     h = httplib2.Http(timeout=3)
-    username, token = info.split(';')
-
+    
     try:
+    	username, token = info.split(';')
         url = 'http://' + ip + ':' + SERVICE_PORT + '/user/' + username + '?friend_token=' + token
         response, content = h.request(url, headers=headers)
         result = flag in content
@@ -140,7 +143,7 @@ old_flag = sys.argv[4]
 
 
 res2 = put_flag(ip, flag)
-res1 = check_flag(ip, old_flag, info)
+res1 = check_flag(ip, old_flag, base64.b64decode(info))
 
 
 if not res1:
@@ -149,6 +152,6 @@ if not res1:
 if not res2:
     status["put"] = 0
 else:
-    status["info"] = res2
+    status["info"] = base64.b64encode(res2)
 
 print json.dumps(status)
