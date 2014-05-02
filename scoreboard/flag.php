@@ -36,8 +36,9 @@ function check_fl()
 	if ($team <= 0 || $team >= count($TEAMS))
 		return ($flag_was_not_accepted." (name of team has wrong format )");
 
-	if (!preg_match("^[a-f0-9]*$", $flag))
+	if (!preg_match("/^[a-f0-9]*$/", $flag))
 		return ($flag_was_not_accepted." (flag has wrong format)");
+
 
 	$result = mysql_query("select * from flags where flag = '".$flag."'");
 	$flag_db = mysql_fetch_array( $result );

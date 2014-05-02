@@ -4,6 +4,7 @@ import json
 import random
 import string
 import sys
+import os
 import socks
 import mimetypes
 import re
@@ -12,7 +13,7 @@ from urllib import urlencode
 
 
 SERVICE_PORT = '8000'
-FLAG_FILE_NAME = 'flag_and_swag.jpg'
+FLAG_DIR_NAME = 'static'
 
 headers = {
     'Content-Type': 'application/x-www-form-urlencoded',
@@ -77,39 +78,39 @@ def put_flag(ip, flag):
 
     try:
         # register
-        data = {
-            'login': login,
-            'password': password}
-        register_url = "http://" + ip + ':' + SERVICE_PORT + "/accounts/register/"
-        response, content = h.request(register_url, "POST", urlencode(data), headers=headers)
+	    data = {
+	        'login': login,
+	        'password': password}
+	    register_url = "http://" + ip + ':' + SERVICE_PORT + "/accounts/register/"
+	    response, content = h.request(register_url, "POST", urlencode(data), headers=headers)
 
-        # login
-        data = {
-            'username': login,
-            'password': password}
-        login_url = "http://" + ip + ':' + SERVICE_PORT + "/accounts/login/?next=/"
-        response, content = h.request(login_url, "POST", urlencode(data), headers=headers)
-        headers['Cookie'] = response['set-cookie']
+	    # login
+	    data = {
+	        'username': login,
+	        'password': password}
+	    login_url = "http://" + ip + ':' + SERVICE_PORT + "/accounts/login/?next=/"
+	    response, content = h.request(login_url, "POST", urlencode(data), headers=headers)
+	    headers['Cookie'] = response['set-cookie']
+	    # put flag
+	    put_flag_url = "http://" + ip + ':' + SERVICE_PORT + "/"
+	    fields = [
+	        ('title', flag),
+	        ('is_private', '1')]
 
-        # put flag
-        put_flag_url = "http://" + ip + ':' + SERVICE_PORT + "/"
-        fields = [
-            ('title', flag),
-            ('is_private', '1')]
+	    catf = random.choice(os.listdir(FLAG_DIR_NAME))
+	    files = [('image', catf, open(FLAG_DIR_NAME + "/" + catf, 'rb').read())]
 
-        files = [('image', FLAG_FILE_NAME, open(FLAG_FILE_NAME, 'rb').read())]
+	    content_type, body = encode_multipart_formdata(fields, files)
+	    headers['Content-Type'] = content_type
+	    response, content = h.request(put_flag_url, "POST", body, headers=headers)
 
-        content_type, body = encode_multipart_formdata(fields, files)
-        headers['Content-Type'] = content_type
-        response, content = h.request(put_flag_url, "POST", body, headers=headers)
-
-        # get friend token
-        token = re.findall(u'Токен для друзей: (\w+)', content.decode('utf-8'), re.UNICODE)
-        return '%s;%s' % (login, token[0])
+	    # get friend token
+	    token = re.findall(u'Токен для друзей: (\w+)', content.decode('utf-8'), re.UNICODE)
+	    return '%s;%s' % (login, token[0])
     except:
         status["get"] = "0"
         status["error"].append(2)
-        return False
+    return False
 
 
 def check_flag(ip, flag, info):

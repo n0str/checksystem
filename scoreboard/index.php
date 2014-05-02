@@ -58,15 +58,16 @@ function getSpan($state){
 
 	  	<input type="hidden" id="up-down" value="-1">
 		<table class="table table-hover">
-			<tr class="info"><td>TEAM</td><td>Defence</td><td>Attack</td><td>Advisory<td>PHP</td><td>Python</td><td>Score</td></tr>
+			<tr class="info"><td>TEAM</td><td>Defence</td><td>Attack</td><td>Advisory<td>PHP</td><td>Perl</td><td>Python</td><td>Score</td></tr>
 			<?php foreach($data as $item): ?>
 			<tr id="team-<?=$item['team_id']?>">
 				<td><?=$item['team']?></td>
 				<td><?=$item['defence']?></td>
 				<td><?=$item['attack']?></td>
 				<td><?=$item['advisory']?></td>
-				<td ><?=getSpan($item['PHP'])?></td>
-				<td ><?=getSpan($item['Python'])?></td>
+				<td ><?=getSpan($item['php'])?></td>
+				<td ><?=getSpan($item['perl'])?></td>
+				<td ><?=getSpan($item['python'])?></td>
 				<td><?=$item['score']?></td>
 			</tr>
 			<?php endforeach; ?>
