@@ -4,7 +4,7 @@
 
 <a href="/user/{{ user.username }}">Мои картинки ({{ user.username }})</a>
 ||
-Токен для друзей: {{ friend_token }}
+<a class="TOKEN">Токен для друзей: {{ friend_token }}</a>
 ||
 <a href="/">На главную</a>
 ||
@@ -20,7 +20,6 @@
 <td>
 <h2> Add MORE Cats</h2>
 <form action="/" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
     {% for field in form %}
         <div>
             {{ field.label_tag }}{{ field }}
@@ -33,7 +32,6 @@
 <td>
 <h2>Search for CATS</h2>
 <form action="search/" method="post">
-    {% csrf_token %}
     <input type="text" name="title">
     <input type="hidden" name="is_private" value="0">
     <input type="submit" value="Search" />

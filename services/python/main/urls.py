@@ -7,8 +7,8 @@ urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'cats.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
-    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
-    (r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
+    url(r'^accounts/login/$', 'main.views.login', name='login'),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
     url(r'^accounts/register/$', 'main.views.registration', name='registration'),
 
     url(r'^$', 'main.views.main_view'),
