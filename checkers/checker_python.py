@@ -23,10 +23,6 @@ headers = {
     'Connection': 'keep-alive'
 }
 
-
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
 # errors: (1,"sys.argv"),(2,"service unvailable"),(3,"Flag not found"),(4,"mumbled")
 
 status = {
@@ -96,7 +92,9 @@ def put_flag(ip, flag):
 
         # put flag
         put_flag_url = "http://" + ip + ':' + SERVICE_PORT + "/"
-        fields = [('title', flag)]
+        fields = [
+            ('title', flag),
+            ('is_private', '1')]
         files = [('image', FLAG_FILE_NAME, open(FLAG_FILE_NAME, 'rb').read())]
         content_type, body = encode_multipart_formdata(fields, files)
         headers['Content-Type'] = content_type
@@ -112,27 +110,13 @@ def put_flag(ip, flag):
 
 
 def check_flag(ip, flag, info):
+    h = httplib2.Http(timeout=3)
+    username, token = info.split(';')
+
     try:
-        socket = socks.socksocket()
-        socket.connect((ip , 16404))
-        a = socket.recv(1024)
-        socket.send("auth\n")
-        a = socket.recv(1024)
-        socket.send(info + "\n")
-        a = socket.recv(1024)
-
-        if "Wrong" in a:
-            status["error"].append(4)
-            return False
-
-        a = socket.recv(1024)
-        socket.send("read\n")
-        a = socket.recv(1024)
-        if flag in a:
-            return True
-        else:
-            status["error"].append(3)
-            return False
+        url = 'http://' + ip + ':' + SERVICE_PORT + '/user/' + username + '?friend_token=' + token
+        response, content = h.request(url, headers=headers)
+        return flag in content
     except:
         status["error"].append(4)
         return False
@@ -152,14 +136,13 @@ old_flag = sys.argv[4]
 
 
 res2 = put_flag(ip, flag)
-#res1 = check_flag(ip, old_flag, info)
-res1 = False
+res1 = check_flag(ip, old_flag, info)
 
 
-if res1 == False:
+if not res1:
     status["get"] = 0
 
-if res2 == False:
+if not res2:
     status["put"] = 0
 else:
     status["info"] = res2
