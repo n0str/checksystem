@@ -24,3 +24,9 @@ function flip(){
 			$('#up-down').val(1);
 
 }
+
+function obnovit_stranicu() {
+location.reload();
+}
+
+setInterval("obnovit_stranicu()", 5000);

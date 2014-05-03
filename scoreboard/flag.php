@@ -3,14 +3,14 @@
 $ROUND_DURATION = 60;
 $FLAG_DURATION = $ROUND_DURATION * 5;
 $TEAMS = array(array(-1,'your_team'),);
-$dblink = mysql_connect("localhost","root","byrfgcekzwbz");
+$dblink = mysql_connect("localhost","root","***");
 if(!$dblink)
 	return ($flag_was_not_accepted." (not connected to database)");
 $db_selected = mysql_select_db("classic-ctf");
 
 if(!$db_selected)
 	return ($flag_was_not_accepted." (not selected database)");
-
+mysql_query("SET NAMES utf8");
 ?>
 
 <?php

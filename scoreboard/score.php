@@ -8,7 +8,7 @@ $TEAMS = array();
 $SERVICES = array();
 $A = 6;
 
-$dblink = mysql_connect("localhost","root","byrfgcekzwbz");
+$dblink = mysql_connect("localhost","root","***");
 if(!$dblink)
     die("not connected to database");
 $db_selected = mysql_select_db("classic-ctf");

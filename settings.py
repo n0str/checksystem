@@ -1,8 +1,8 @@
 
 teams = [
-    (1, 'yozik', '127.0.0.1'),
-    (2, 'keva-mustang', '10.53.255.3'),
-    #(3, 'brizzz', '127.0.0.1'),
+    (1, 'yozik', '10.53.1.3'),
+    (2, 'keva-mustang', '10.53.3.3'),
+    (3, 'brizzz', '10.53.2.3'),
 ]
 
 services = [
@@ -14,7 +14,7 @@ services = [
 db_settings = {
 	"host" : "localhost",
 	"user" : "root",
-	"password" : "byrfgcekzwbz",
+	"password" : "***",
 	"db" : "classic-ctf"
 }
 

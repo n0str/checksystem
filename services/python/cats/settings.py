@@ -62,7 +62,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'python_service',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': '***',
         'HOST': '',
         'PORT': '',
     }
@@ -85,5 +85,5 @@ TEMPLATE_DIRS = (
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 STATIC_URL = '/static/'
-MEDIA_ROOT = '/home/kenny/study/python-service/cats/cats_files/'
+MEDIA_ROOT = '/tmp/cats/'
 MEDIA_URL = '/cats_files/'
